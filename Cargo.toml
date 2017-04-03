@@ -1,0 +1,13 @@
+[package]
+name = "crates-mirror"
+version = "0.1.0"
+authors = ["C4K3"]
+repository = "https://github.com/C4K3/crates-mirror-rs"
+
+[dependencies]
+git2 = "0.6"
+getopts = "0.2"
+rustc-serialize = "0.3"
+walkdir = "1"
+curl = "0.4"
+sha2 = "0.4"
