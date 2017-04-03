@@ -5,15 +5,15 @@ crates-ectype (because there is already more than one crates-mirror, and I've re
 
 It is run simply as `crates-ectype /path/to/place/.crates/in`. You can optionally pass `--yanked` to also download yanked .crates, `--no-update-index` to not update the crates.io-index, and `--no-check-sums` to skip verifying the sha256sums of already downloaded .crates.
 
-Replacement URLs are defined with --replace=URL. The URL should be the base URL for where clients can download the crates from, e.g. `https://crates.io/api/v1/crates`. Clients then use your mirror by pointing their cargo config to your index repository.
+Replacement URLs are defined with `--replace=URL`. The URL should be the base URL for where clients can download the crates from, e.g. `https://crates.io/api/v1/crates`. Clients then use your mirror by pointing their cargo config to your index repository.
 
 Beware that there are many crates, and it may take a while to download them all the first time around, and expect them to use at least 7GB of space.
 
-# Example: Setting up a mirror with nginx and fcgiwrap
+## Example: Setting up a mirror with nginx and fcgiwrap
 
 Let's say you want to host a mirror with nginx, and you want to store the downloaded crates in /srv/crates. You would first run `crates-ectype /srv/crates` to download all the crates.
 
-Let's say you want to host the crates themselves under http://localhost/crates, and the index under http://localhost/crates.io-index. We'd need the following nginx directive to allow for downloading the .crate files (crates are downloaded as example.com/crates/cratename/version/download, where example.com/crates can be anything)
+Let's say you want to host the crates themselves under http://localhost/crates, and the index under http://localhost/crates.io-index. We'd need the following nginx directive to allow for downloading the .crate files (crates are downloaded as example.com/crates/*cratename*/*version*/download, where example.com/crates would be the replacement URL)
 ```
 location /crates/ {
 	alias /srv/crates/;
