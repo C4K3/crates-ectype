@@ -272,7 +272,8 @@ fn git_pull(repo: &mut Repository) {
     };
     let object =
         repo.find_object(oid, None).expect("git_pull error getting object");
-    repo.reset(&object, git2::ResetType::Hard, None).expect("git_pull error doing hard reset");
+    repo.reset(&object, git2::ResetType::Hard, None)
+        .expect("git_pull error doing hard reset");
 
     println!("Done updating index repository");
 }
@@ -383,8 +384,12 @@ fn fetch_crates(crates: &BTreeSet<Crate>,
 
     let mut output = Vec::new();
     let mut handle = Easy::new();
-    handle.follow_location(true).expect("fetch_crates error setting follow_location to true");
-    handle.fail_on_error(true).expect("fetch_crates error setting fail_on_error to true");
+    handle
+        .follow_location(true)
+        .expect("fetch_crates error setting follow_location to true");
+    handle
+        .fail_on_error(true)
+        .expect("fetch_crates error setting fail_on_error to true");
 
     for c in crates {
         let crate_name = format!("{}-{}.crate", c.name, c.vers);
@@ -431,10 +436,11 @@ fn fetch_crates(crates: &BTreeSet<Crate>,
         output.clear();
         {
             let mut transfer = handle.transfer();
-            transfer.write_function(|new_data| {
-                                        output.extend_from_slice(new_data);
-                                        Ok(new_data.len())
-                                    })
+            transfer
+                .write_function(|new_data| {
+                                    output.extend_from_slice(new_data);
+                                    Ok(new_data.len())
+                                })
                 .expect("fetch_crates error setting write_function");
 
             match transfer.perform() {
@@ -555,7 +561,8 @@ fn replace_url(new_url: &str, git_dir: &PathBuf) {
 fn sha256sum(data: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.input(data);
-    hasher.result()
+    hasher
+        .result()
         .iter()
         .map(|x| format!("{:02x}", x))
         .fold("".to_string(), |mut a, b| {
