@@ -1,5 +1,5 @@
 [root]
-name = "crates-mirror"
+name = "crates-ectype"
 version = "0.1.0"
 dependencies = [
  "curl 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
