@@ -367,7 +367,8 @@ fn read_crate_index(git_dir: &PathBuf,
              Crate::new("ojfiewijogwhiogerhiugerhiuegr", "0.1.2"),
              Crate::new("rustbook", "0.1.0"),
              Crate::new("rustbook", "0.2.0"),
-             Crate::new("rustbook", "0.3.0")];
+             Crate::new("rustbook", "0.3.0"),
+             Crate::new("cargo-ctags", "0.2.3")];
 
     for c in &unavailable_crates {
         let _: bool = ret.remove(c);
