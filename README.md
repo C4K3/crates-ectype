@@ -41,6 +41,6 @@ replace-with = 'my-mirror'
 [source.my-mirror]
 registry = "http://localhost/crates.io-index/"
 ```
-([Source replacement docs](http://doc.crates.io/source-replacement.html))
+([Source replacement docs](https://doc.rust-lang.org/cargo/reference/source-replacement.html))
 
 To keep it up to date, you can create a cronjob to run crates-ectype. Just be sure to also include the --replace option, because every time you run crates-ectype without --no-update-index, the config.json is replaced with the original one.
