@@ -368,7 +368,9 @@ fn read_crate_index(git_dir: &PathBuf,
              Crate::new("rustbook", "0.1.0"),
              Crate::new("rustbook", "0.2.0"),
              Crate::new("rustbook", "0.3.0"),
-             Crate::new("cargo-ctags", "0.2.3")];
+             Crate::new("cargo-ctags", "0.2.3"),
+             Crate::new("wright", "0.2.2"), /* https://github.com/rust-lang/crates.io/issues/1201 */
+             ];
 
     for c in &unavailable_crates {
         let _: bool = ret.remove(c);
