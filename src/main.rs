@@ -145,6 +145,7 @@ fn main() {
                 "replace",
                 "Specify the URL to replace the index repository dl url",
                 "URL");
+    opts.optflag("", "strict", "exit immediately on any error/checksum mismatch");
     opts.optflag("h", "help", "print the help menu");
     opts.optflag("", "version", "print program version");
 
@@ -190,7 +191,8 @@ fn main() {
     fetch_crates(&crates,
                  &config,
                  &archive,
-                 matches.opt_present("no-check-sums"));
+                 matches.opt_present("no-check-sums"),
+                 matches.opt_present("strict"));
 
     if let Some(new_url) = matches.opt_str("replace") {
         replace_url(&new_url, &git_dir);
@@ -383,7 +385,8 @@ fn read_crate_index(git_dir: &PathBuf,
 fn fetch_crates(crates: &BTreeSet<Crate>,
                 config: &Config,
                 crates_dir: &PathBuf,
-                no_check_sums: bool) {
+                no_check_sums: bool,
+                strict_mode: bool) {
     let crates_dir = crates_dir.clone();
 
     let mut output = Vec::new();
@@ -394,6 +397,9 @@ fn fetch_crates(crates: &BTreeSet<Crate>,
     handle
         .fail_on_error(true)
         .expect("fetch_crates error setting fail_on_error to true");
+
+    /* A list of downloaded crates whose checksums did not match */
+    let mut checksum_mismatches = Vec::new();
 
     for c in crates {
         let crate_name = format!("{}-{}.crate", c.name, c.vers);
@@ -467,12 +473,16 @@ fn fetch_crates(crates: &BTreeSet<Crate>,
         if hash != c.cksum {
             /* Check the downloaded file matches the sha256 hash in the
              * registry */
-            println!("file contents: \"{:?}\"", &output);
-            error!("Checksum mismatch in {}-{}. Expected hash {} but received file with hash {}",
-                   c.name,
-                   c.vers,
-                   c.cksum,
-                   hash);
+            if strict_mode {
+                error!("Checksum mismatch in {}-{}. Expected hash {} but received file with hash {}",
+                       c.name,
+                       c.vers,
+                       c.cksum,
+                       hash);
+            } else {
+                checksum_mismatches.push((c, hash));
+                continue;
+            }
         }
 
         let mut f = match File::create(&partfile) {
@@ -503,6 +513,20 @@ fn fetch_crates(crates: &BTreeSet<Crate>,
         }
     }
 
+    if !strict_mode {
+        if !checksum_mismatches.is_empty() {
+            eprintln!("Warning: The following {} crates were not saved because their checksum did not match the checksum in the index:",
+                      checksum_mismatches.len());
+        }
+        for (c, downloaded_hash) in checksum_mismatches {
+            eprintln!("	{}-{} expected hash {} but received file with hash {}",
+                      c.name,
+                      c.vers,
+                      c.cksum,
+                      downloaded_hash);
+
+        }
+    }
 }
 
 fn replace_url(new_url: &str, git_dir: &PathBuf) {
