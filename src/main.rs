@@ -370,6 +370,7 @@ fn read_crate_index(git_dir: &PathBuf,
              Crate::new("rustbook", "0.3.0"),
              Crate::new("cargo-ctags", "0.2.3"),
              Crate::new("wright", "0.2.2"), /* https://github.com/rust-lang/crates.io/issues/1201 */
+             Crate::new("stitch", "0.1.0"), /* https://github.com/C4K3/crates-ectype/issues/1 */
              ];
 
     for c in &unavailable_crates {
