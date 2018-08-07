@@ -5,9 +5,9 @@ authors = ["C4K3"]
 repository = "https://github.com/C4K3/crates-ectype"
 
 [dependencies]
-git2 = "0.6"
+git2 = "0.7"
 getopts = "0.2"
 rustc-serialize = "0.3"
 walkdir = "1"
 curl = "0.4"
-sha2 = "0.4"
+sha2 = "0.7"
