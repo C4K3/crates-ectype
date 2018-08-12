@@ -40,12 +40,12 @@ macro_rules! error {
 
 /// Represents the config.json file in the crates.io-index
 #[derive(RustcDecodable, RustcEncodable)]
-struct Config {
+struct ConfigJsonFile {
     dl: String,
     api: String,
     dl_orig: Option<String>,
 }
-impl Config {
+impl ConfigJsonFile {
     /// Read the config given the path to the git directory
     fn read(git_dir: &PathBuf) -> Self {
         let mut path = git_dir.clone();
@@ -184,7 +184,7 @@ fn main() {
                         "https://github.com/rust-lang/crates.io-index");
     }
 
-    let config = Config::read(&git_dir);
+    let config = ConfigJsonFile::read(&git_dir);
 
     let crates = read_crate_index(&git_dir, matches.opt_present("yanked"));
 
@@ -383,7 +383,7 @@ fn read_crate_index(git_dir: &PathBuf,
 }
 
 fn fetch_crates(crates: &BTreeSet<Crate>,
-                config: &Config,
+                config: &ConfigJsonFile,
                 crates_dir: &PathBuf,
                 no_check_sums: bool,
                 strict_mode: bool) {
@@ -531,7 +531,7 @@ fn fetch_crates(crates: &BTreeSet<Crate>,
 
 fn replace_url(new_url: &str, git_dir: &PathBuf) {
     /* First we edit the actual file (if need be) */
-    let mut config = Config::read(git_dir);
+    let mut config = ConfigJsonFile::read(git_dir);
 
     if new_url == config.dl {
         return;
