@@ -13,8 +13,6 @@ use std::fs::{self, File};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
 
-use getopts::Options;
-
 use git2::Repository;
 
 use walkdir::WalkDir;
@@ -95,6 +93,38 @@ impl ConfigJsonFile {
     }
 }
 
+/// Represents the settings in a given run of the program
+#[derive(Debug)]
+struct Settings {
+    help: bool,
+    version: bool,
+    update_index: bool,
+    download_yanked: bool,
+    check_sums: bool,
+    replace: Option<String>,
+    strict_mode: bool,
+    archive: PathBuf,
+}
+impl<'a> From<&'a getopts::Matches> for Settings {
+    fn from(matches: &getopts::Matches) -> Self {
+
+        let archive = match matches.free.get(0) {
+            Some(x) => &x,
+            None => "",
+        };
+        Settings {
+            help: matches.opt_present("help"),
+            version: matches.opt_present("version"),
+            update_index: matches.opt_present("no-update-index") == false,
+            download_yanked: matches.opt_present("yanked"),
+            check_sums: matches.opt_present("no-check-sums") == false,
+            replace: matches.opt_str("replace"),
+            strict_mode: matches.opt_present("strict"),
+            archive: PathBuf::from(archive),
+        }
+    }
+}
+
 /// Represents information about a single .crate file
 #[derive(RustcDecodable, Debug, Eq)]
 struct Crate {
@@ -135,7 +165,7 @@ impl PartialOrd for Crate {
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let mut opts = Options::new();
+    let mut opts = getopts::Options::new();
     opts.optflag("", "no-update-index", "Don't update the index");
     opts.optflag("", "yanked", "Also download yanked .crate files");
     opts.optflag("",
@@ -154,13 +184,15 @@ fn main() {
         Err(e) => error!("Error parsing options: {}", e.description()),
     };
 
-    if matches.opt_present("h") {
+    let settings = Settings::from(&matches);
+
+    if settings.help {
         let brief = "Usage: crates-ectype [options] ARCHIVE-DIRECTORY";
         print!("{}", opts.usage(&brief));
         return;
     }
 
-    if matches.opt_present("version") {
+    if settings.version {
         println!("{} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
         println!("{}", env!("CARGO_PKG_HOMEPAGE"));
         return;
@@ -172,29 +204,25 @@ fn main() {
         _ => error!("You cannot specify more than one archive location."),
     }
 
-    let archive = PathBuf::from(&matches.free[0]);
-    create_dir(&archive);
+    create_dir(&settings.archive);
 
-    let mut git_dir = archive.clone();
+    let mut git_dir = settings.archive.clone();
     git_dir.push("index");
 
-
-    if matches.opt_present("no-update-index") == false {
+    if settings.update_index {
         update_git_repo(&git_dir,
                         "https://github.com/rust-lang/crates.io-index");
     }
 
     let config = ConfigJsonFile::read(&git_dir);
 
-    let crates = read_crate_index(&git_dir, matches.opt_present("yanked"));
+    let crates = read_crate_index(&git_dir, &settings);
 
     fetch_crates(&crates,
                  &config,
-                 &archive,
-                 matches.opt_present("no-check-sums"),
-                 matches.opt_present("strict"));
+                 &settings);
 
-    if let Some(new_url) = matches.opt_str("replace") {
+    if let Some(new_url) = settings.replace {
         replace_url(&new_url, &git_dir);
     }
 }
@@ -282,7 +310,7 @@ fn git_pull(repo: &mut Repository) {
 
 /// Read the index directory, returning all the Crates
 fn read_crate_index(git_dir: &PathBuf,
-                    include_yanked: bool)
+                    settings: &Settings)
                     -> BTreeSet<Crate> {
     println!("Reading the crates index");
     let mut ret = BTreeSet::new();
@@ -329,7 +357,7 @@ fn read_crate_index(git_dir: &PathBuf,
                            e)
                 },
             };
-            if include_yanked || crate_info.yanked == false {
+            if settings.download_yanked || crate_info.yanked == false {
                 ret.insert(crate_info);
             }
         }
@@ -384,10 +412,8 @@ fn read_crate_index(git_dir: &PathBuf,
 
 fn fetch_crates(crates: &BTreeSet<Crate>,
                 config: &ConfigJsonFile,
-                crates_dir: &PathBuf,
-                no_check_sums: bool,
-                strict_mode: bool) {
-    let crates_dir = crates_dir.clone();
+                settings: &Settings) {
+    let crates_dir = &settings.archive;
 
     let mut output = Vec::new();
     let mut handle = Easy::new();
@@ -405,7 +431,7 @@ fn fetch_crates(crates: &BTreeSet<Crate>,
         let crate_name = format!("{}-{}.crate", c.name, c.vers);
         let cratefile = crates_dir.join(&crate_name);
         if cratefile.exists() {
-            if no_check_sums == false {
+            if settings.check_sums {
                 /* Check the downloaded file matches the sha256 hash in the
                  * registry */
                 output.clear();
@@ -473,7 +499,7 @@ fn fetch_crates(crates: &BTreeSet<Crate>,
         if hash != c.cksum {
             /* Check the downloaded file matches the sha256 hash in the
              * registry */
-            if strict_mode {
+            if settings.strict_mode {
                 error!("Checksum mismatch in {}-{}. Expected hash {} but received file with hash {}",
                        c.name,
                        c.vers,
@@ -513,7 +539,7 @@ fn fetch_crates(crates: &BTreeSet<Crate>,
         }
     }
 
-    if !strict_mode {
+    if !settings.strict_mode {
         if !checksum_mismatches.is_empty() {
             eprintln!("Warning: The following {} crates were not saved because their checksum did not match the checksum in the index:",
                       checksum_mismatches.len());
