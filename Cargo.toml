@@ -3,6 +3,7 @@ name = "crates-ectype"
 version = "0.1.0"
 authors = ["C4K3"]
 repository = "https://github.com/C4K3/crates-ectype"
+homepage = "https://c4k3.net/C4K3/crates-ectype"
 
 [dependencies]
 git2 = "0.7"
