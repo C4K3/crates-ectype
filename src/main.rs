@@ -103,6 +103,7 @@ struct Settings {
     check_sums: bool,
     replace: Option<String>,
     strict_mode: bool,
+    download_old: bool,
     archive: PathBuf,
 }
 impl<'a> From<&'a getopts::Matches> for Settings {
@@ -120,6 +121,7 @@ impl<'a> From<&'a getopts::Matches> for Settings {
             check_sums: matches.opt_present("no-check-sums") == false,
             replace: matches.opt_str("replace"),
             strict_mode: matches.opt_present("strict"),
+            download_old: matches.opt_present("download-old"),
             archive: PathBuf::from(archive),
         }
     }
@@ -176,6 +178,7 @@ fn main() {
                 "Specify the URL to replace the index repository dl url",
                 "URL");
     opts.optflag("", "strict", "exit immediately on any error/checksum mismatch");
+    opts.optflag("", "download-old", "download old versions of crates, default is to only download newest version of every crate");
     opts.optflag("h", "help", "print the help menu");
     opts.optflag("", "version", "print program version");
 
@@ -340,7 +343,13 @@ fn read_crate_index(git_dir: &PathBuf,
         };
         let f = BufReader::new(f);
 
-        for line in f.lines() {
+        let mut iter = f.lines().peekable();
+        loop {
+            let line = match iter.next() {
+                Some(x) => x,
+                None => break,
+            };
+
             let line = match line {
                 Ok(x) => x,
                 Err(e) => {
@@ -357,7 +366,10 @@ fn read_crate_index(git_dir: &PathBuf,
                            e)
                 },
             };
-            if settings.download_yanked || crate_info.yanked == false {
+
+            /* Assume that the newest version is listed last in the index file */
+            if (settings.download_yanked || crate_info.yanked == false)
+                && (settings.download_old || iter.peek().is_none()) {
                 ret.insert(crate_info);
             }
         }

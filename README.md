@@ -3,7 +3,9 @@ crates-ectype
 
 crates-ectype (because there is already more than one crates-mirror, and I've read far too much Kant recently) is a basic Rust program made to essentially just clone the [crates.io-index](https://github.com/rust-lang/crates.io-index) repository, and then download every .crate file listed in the index. It also allows you to put a replacement URL, so that you can easily serve the mirror.
 
-It is run simply as `crates-ectype /path/to/place/.crates/in`. You can optionally pass `--yanked` to also download yanked .crates, `--no-update-index` to not update the crates.io-index, and `--no-check-sums` to skip verifying the sha256sums of already downloaded .crates.
+It is run simply as `crates-ectype /path/to/place/.crates/in`. You can optionally pass `--yanked` to also download yanked .crates, `--download-old` to also download all old versions of crates (default is to only download newest version), `--no-update-index` to not update the crates.io-index, and `--no-check-sums` to skip verifying the sha256sums of already downloaded .crates.
+
+Run `crates-ectype --help` to see a full list of possible arguments.
 
 Replacement URLs are defined with `--replace=URL`. The URL should be the base URL for where clients can download the crates from, e.g. `https://crates.io/api/v1/crates`. Clients then use your mirror by pointing their cargo config to your index repository.
 
