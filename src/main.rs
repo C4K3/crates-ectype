@@ -105,6 +105,7 @@ struct Settings {
     strict_mode: bool,
     download_old: bool,
     archive: PathBuf,
+    use_orig_dl: bool,
 }
 impl<'a> From<&'a getopts::Matches> for Settings {
     fn from(matches: &getopts::Matches) -> Self {
@@ -123,6 +124,7 @@ impl<'a> From<&'a getopts::Matches> for Settings {
             strict_mode: matches.opt_present("strict"),
             download_old: matches.opt_present("download-old"),
             archive: PathBuf::from(archive),
+            use_orig_dl: matches.opt_present("use-orig-dl"),
         }
     }
 }
@@ -142,6 +144,17 @@ impl Crate {
             vers: vers.to_string(),
             yanked: true,
             cksum: String::new(),
+        }
+    }
+    /// Return the URL which should be used to download the crate from
+    fn download_url(&self, config: &ConfigJsonFile, settings: &Settings) -> String {
+        if settings.use_orig_dl {
+            format!("{}/{}/{}/download", config.dl, self.name, self.vers)
+        } else {
+            format!("https://static.crates.io/crates/{}/{}-{}.crate",
+                    self.name,
+                    self.name,
+                    self.vers)
         }
     }
 }
@@ -179,6 +192,7 @@ fn main() {
                 "URL");
     opts.optflag("", "strict", "exit immediately on any error/checksum mismatch");
     opts.optflag("", "download-old", "download old versions of crates, default is to only download newest version of every crate");
+    opts.optflag("", "use-orig-dl", "download from the URL specified in the upstream index repository. May help if unable to download crates, but will likely cause the download counter to be incremented and should normally not be used.");
     opts.optflag("h", "help", "print the help menu");
     opts.optflag("", "version", "print program version");
 
@@ -475,7 +489,7 @@ fn fetch_crates(crates: &BTreeSet<Crate>,
         }
 
         let partfile = crates_dir.join(&format!("{}.part", crate_name));
-        let url = format!("{}/{}/{}/download", config.dl, c.name, c.vers);
+        let url = c.download_url(&config, settings);
         println!("Fetching {} version {} from {}", c.name, c.vers, url);
 
         handle.url(&url).expect("fetch_crates error setting url");
