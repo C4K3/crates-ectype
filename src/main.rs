@@ -567,11 +567,11 @@ fn fetch_crates(crates: &BTreeSet<Crate>,
 
     if !settings.strict_mode {
         if !checksum_mismatches.is_empty() {
-            eprintln!("Warning: The following {} crates were not saved because their checksum did not match the checksum in the index:",
+            println!("Warning: The following {} crates were not saved because their checksum did not match the checksum in the index:",
                       checksum_mismatches.len());
         }
         for (c, downloaded_hash) in checksum_mismatches {
-            eprintln!("	{}-{} expected hash {} but received file with hash {}",
+            println!("	{}-{} expected hash {} but received file with hash {}",
                       c.name,
                       c.vers,
                       c.cksum,
