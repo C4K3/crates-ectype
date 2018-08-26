@@ -453,6 +453,10 @@ fn fetch_crates(crates: &BTreeSet<Crate>,
     /* A list of downloaded crates whose checksums did not match */
     let mut checksum_mismatches = Vec::new();
 
+    if settings.check_sums {
+        println!("Info: Checksum verification of already downloaded crates is enabled. If you have already downloaded many crates, this may take a long time. There will be no output when already downloaded crates are checked. To disable this, run with --no-check-sums (new crates will still have their checksum verified.)");
+    }
+
     for c in crates {
         let crate_name = format!("{}-{}.crate", c.name, c.vers);
         let cratefile = crates_dir.join(&crate_name);
@@ -526,12 +530,17 @@ fn fetch_crates(crates: &BTreeSet<Crate>,
             /* Check the downloaded file matches the sha256 hash in the
              * registry */
             if settings.strict_mode {
-                error!("Checksum mismatch in {}-{}. Expected hash {} but received file with hash {}",
+                error!("Error: Checksum mismatch in {}-{}. Expected hash {} but received file with hash {}",
                        c.name,
                        c.vers,
                        c.cksum,
                        hash);
             } else {
+                println!("Warning: Checksum mismatch in {}-{}. Expected hash {} but received file with hash {}",
+                       c.name,
+                       c.vers,
+                       c.cksum,
+                       hash);
                 checksum_mismatches.push((c, hash));
                 continue;
             }
